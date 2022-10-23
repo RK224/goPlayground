@@ -1,0 +1,2 @@
+This is a sample page, updated now.
+Adding a new line to test update
