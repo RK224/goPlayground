@@ -11,6 +11,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type BaseHandlerParams struct {
+	Base     string
+	BasePath string
+}
+
 func GetBaseHandler(pathsToUrls map[string]string, fallback http.Handler, base string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pathKey := r.URL.Path
@@ -43,7 +48,6 @@ func initializeDb(pathsToUrls map[string]string) {
 		if err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
-		pathsToUrls["/very-very-important"] = "https://youtu.be/G8a1lz10H-Q"
 		for path, url := range pathsToUrls {
 			err = b.Put([]byte(path), []byte(url))
 			if err != nil {
@@ -114,5 +118,5 @@ func Handler(conf []byte, extension string, fallback http.Handler) (http.Handler
 	}
 
 	pathToUrls := buildMap(parsedConf)
-	return MapHandler(pathToUrls, fallback), nil
+	return GetBaseHandler(pathToUrls, fallback, "map"), nil
 }
