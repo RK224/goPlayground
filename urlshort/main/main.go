@@ -31,13 +31,13 @@ func main() {
 
 	// Build the jsonHandler using the mapHandler as the
 	// fallback
-	jsonHandler, err := urlshort.JsonHandler(readFile(*filePath), mapHandler)
+	yamlHandler, err := urlshort.YAMLHandler(readFile(*filePath), mapHandler)
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Println("Starting the server on :8080")
-	http.ListenAndServe(":8080", jsonHandler)
+	http.ListenAndServe(":8080", yamlHandler)
 }
 
 func defaultMux() *http.ServeMux {
