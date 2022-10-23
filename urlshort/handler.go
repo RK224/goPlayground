@@ -3,27 +3,77 @@ package urlshort
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
 
+	"github.com/boltdb/bolt"
 	"gopkg.in/yaml.v2"
 )
 
-// MapHandler will return an http.HandlerFunc (which also
-// implements http.Handler) that will attempt to map any
-// paths (keys in the map) to their corresponding URL (values
-// that each key in the map points to, in string format).
-// If the path is not provided in the map, then the fallback
-// http.Handler will be called instead.
-func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.HandlerFunc {
+func GetBaseHandler(pathsToUrls map[string]string, fallback http.Handler, base string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pathKey := r.URL.Path
-		redirectUrl, ok := pathsToUrls[pathKey]
+		var redirectUrl string
+		var ok bool
+		switch base {
+		case "db":
+			initializeDb(pathsToUrls)
+			redirectUrl, ok = getUrlForPathFromDb(pathKey)
+		case "map":
+			redirectUrl, ok = pathsToUrls[pathKey]
+		}
+
 		if ok {
 			http.Redirect(w, r, redirectUrl, http.StatusFound)
 		} else {
 			fallback.ServeHTTP(w, r)
 		}
 	}
+}
+
+func initializeDb(pathsToUrls map[string]string) {
+	db, err := bolt.Open("bolt.db", 0600, nil)
+	defer db.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte("PathToUrl"))
+		if err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		pathsToUrls["/very-very-important"] = "https://youtu.be/G8a1lz10H-Q"
+		for path, url := range pathsToUrls {
+			err = b.Put([]byte(path), []byte(url))
+			if err != nil {
+				return fmt.Errorf("Unable to insert value %s for key %s", url, path)
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func getUrlForPathFromDb(path string) (url string, ok bool) {
+	db, err := bolt.Open("bolt.db", 0600, nil)
+	defer db.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("PathToUrl"))
+		v := b.Get([]byte(path))
+		if v != nil {
+			url = string(v)
+			ok = true
+		}
+		return nil
+	})
+	return
 }
 
 type pathToUrl struct {

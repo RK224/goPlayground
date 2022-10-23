@@ -34,20 +34,18 @@ func main() {
 
 	filePath := readUrlShortParameters()
 
-	// Build the MapHandler using the mux as the fallback
 	pathsToUrls := map[string]string{
 		"/urlshort-godoc":      "https://godoc.org/github.com/gophercises/urlshort",
 		"/yaml-godoc":          "https://godoc.org/gopkg.in/yaml.v2",
-		"/very-very-important": "https://youtu.be/R8U2ElYYChs",
+		"/very-very-important": "https://youtu.be/4_5nScdQiWM",
 	}
-	mapHandler := urlshort.MapHandler(pathsToUrls, mux)
 
+	fallback := urlshort.GetBaseHandler(pathsToUrls, mux, "db")
 	conf, ext := readConf(*filePath)
-	handler, err := urlshort.Handler(conf, ext, mapHandler)
+	handler, err := urlshort.Handler(conf, ext, fallback)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	fmt.Println("Starting the server on :8080")
 	http.ListenAndServe(":8080", handler)
 }
