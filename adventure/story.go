@@ -6,15 +6,15 @@ import (
 	"log"
 )
 
-type arcLink struct {
+type ArcLink struct {
 	Text string
 	Arc  string
 }
 
-type storyArc struct {
+type StoryArc struct {
 	Title   string
 	Story   []string
-	Options []arcLink
+	Options []ArcLink
 }
 
 func readFile(filePath string) []byte {
@@ -25,9 +25,9 @@ func readFile(filePath string) []byte {
 	return file
 }
 
-func ReadStory(filePath string) map[string]storyArc {
+func ReadStory(filePath string) map[string]StoryArc {
 	file := readFile(filePath)
-	storyMap := make(map[string]storyArc)
+	storyMap := make(map[string]StoryArc)
 	err := json.Unmarshal(file, &storyMap)
 	if err != nil {
 		log.Fatal(err)

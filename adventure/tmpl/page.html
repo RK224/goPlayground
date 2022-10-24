@@ -4,23 +4,15 @@
   </head>
   <body>
     <section class="page">
-      <h1></h1>
-      
-        <p></p>
-      
-        <p></p>
-      
-        <p></p>
-      
-        <p></p>
-      
-      
-        <ul>
-        
-          <li><a href=""></a></li>
-        
-        </ul>
-      
+      <h1>{{.Title}}</h1>
+      {{range $text := .Story}}
+        <p>{{$text}}</p>
+      {{end}}    
+      <ul>
+      {{range $arcLink := .Options}}
+        <li><a href="/view/{{$arcLink.Arc}}">{{$arcLink.Text}}</a></li>
+      {{end}}
+      </ul>
     </section>
     <style>
       body {
