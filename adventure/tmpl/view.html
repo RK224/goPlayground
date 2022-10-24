@@ -5,14 +5,18 @@
   <body>
     <section class="page">
       <h1>{{.Title}}</h1>
+      {{if .Story}}
       {{range $text := .Story}}
         <p>{{$text}}</p>
       {{end}}    
-      <ul>
+      {{end}}
+      {{if .Options}}
+        <ul>
       {{range $arcLink := .Options}}
         <li><a href="/view/{{$arcLink.Arc}}">{{$arcLink.Text}}</a></li>
       {{end}}
       </ul>
+      {{end}}
     </section>
     <style>
       body {
