@@ -1,5 +1,6 @@
 *.db
 .vscode/
 urlshort/main/main
+adventure/main/main
 gowiki/wiki
 quiz/quiz
