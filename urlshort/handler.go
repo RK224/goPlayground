@@ -17,13 +17,16 @@ type BaseHandlerParams struct {
 }
 
 func GetBaseHandler(pathsToUrls map[string]string, fallback http.Handler, base string) http.HandlerFunc {
+	if base == "db" {
+		initializeDb(pathsToUrls)
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		pathKey := r.URL.Path
 		var redirectUrl string
 		var ok bool
 		switch base {
 		case "db":
-			initializeDb(pathsToUrls)
 			redirectUrl, ok = getUrlForPathFromDb(pathKey)
 		case "map":
 			redirectUrl, ok = pathsToUrls[pathKey]
@@ -70,6 +73,9 @@ func getUrlForPathFromDb(path string) (url string, ok bool) {
 	}
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("PathToUrl"))
+		if b == nil {
+			return errors.New("The request bucket does not exist")
+		}
 		v := b.Get([]byte(path))
 		if v != nil {
 			url = string(v)
