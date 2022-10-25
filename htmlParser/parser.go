@@ -1,8 +1,8 @@
 package htmlParser
 
 import (
+	"io"
 	"log"
-	"os"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -36,14 +36,9 @@ func getText(n *html.Node) string {
 	return text
 }
 
-func Traverse(filepath string) []Link {
+func Traverse(r io.Reader) []Link {
 	var links []Link
-	file, err := os.Open(filepath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var root *html.Node
-	root, err = html.Parse(file)
+	root, err := html.Parse(r)
 	if err != nil {
 		log.Fatal(err)
 	}

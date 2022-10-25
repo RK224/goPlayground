@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"htmlParser"
+	"log"
+	"os"
 )
 
 func getFilepath() string {
@@ -13,6 +15,10 @@ func getFilepath() string {
 }
 
 func main() {
-	links := htmlParser.Traverse(getFilepath())
+	f, err := os.Open(getFilepath())
+	if err != nil {
+		log.Fatal(err)
+	}
+	links := htmlParser.Traverse(f)
 	fmt.Println(links)
 }
