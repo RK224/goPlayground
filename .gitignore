@@ -2,5 +2,6 @@
 .vscode/
 urlshort/main/main
 adventure/main/main
+htmlParser/main/main
 gowiki/wiki
 quiz/quiz
