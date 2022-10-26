@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"htmlParser"
 	"io"
-	"log"
 	"net/http"
 	"regexp"
 )
@@ -17,44 +16,64 @@ func getFilepath() string {
 	return *filepath
 }
 
-var path = regexp.MustCompile("^(http|https)://([a-zA-Z0-9]+).([a-zA-Z0-9.]+)/")
+func main() {
+	siteMap := make(map[string]bool)
 
-func getDomainName(url string) string {
+	MapSite("https://www.google.com/", &siteMap, 0)
+	for key := range siteMap {
+		fmt.Println(key)
+	}
+}
+
+var path = regexp.MustCompile("^(http|https)://([a-zA-Z0-9]+).([a-zA-Z0-9]+).([a-zA-Z0-9.]+)")
+
+func getDomainName(url string) map[string]string {
 	m := path.FindStringSubmatch(url)
 	if m != nil {
-		return m[3]
-	} else {
-		return ""
+		return map[string]string{"protocol": m[1], "subDomain": m[2], "domain": m[3], "topLevelDomain": m[4]}
 	}
-
+	return nil
 }
-func main() {
-	var allLinks []string
-	mapSite("https://www.google.com/", &allLinks)
-	fmt.Println(allLinks)
+func isSameDomain(targetUrlMap map[string]string, urlMap map[string]string) bool {
+	return targetUrlMap["domain"] == urlMap["domain"] && targetUrlMap["topLevelDomain"] == urlMap["topLevelDomain"]
 }
 
-func filterSameDomain(domain string, links []htmlParser.Link) []htmlParser.Link {
+func constructUrl(targetUrlMap map[string]string, href string) string {
+	return fmt.Sprintf("%v://%v.%v.%v%v", targetUrlMap["protocol"], targetUrlMap["subDomain"], targetUrlMap["domain"], targetUrlMap["topLevelDomain"], href)
+}
+
+func filterSameDomain(targetUrlMap map[string]string, links []htmlParser.Link) []htmlParser.Link {
 	var sameDomainLinks []htmlParser.Link
 	for _, link := range links {
-		dn := getDomainName(link.Href)
-		if dn == "" || dn == domain {
+		urlMap := getDomainName(link.Href)
+		if urlMap == nil {
+			sameDomainLinks = append(sameDomainLinks, htmlParser.Link{Href: constructUrl(targetUrlMap, link.Href), Text: link.Text})
+		} else if isSameDomain(targetUrlMap, urlMap) {
 			sameDomainLinks = append(sameDomainLinks, link)
 		}
 	}
 	return sameDomainLinks
 }
 
-func mapSite(url string, allLinks *[]string) {
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Fatal(err)
-	}
+func getResponseReader(url string) io.Reader {
+	resp, _ := http.Get(url)
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(resp.Body)
-	links := htmlParser.Traverse(bytes.NewReader(b))
+	return bytes.NewReader(b)
+}
+
+func MapSite(url string, siteMap *map[string]bool, depth int) {
+	(*siteMap)[url] = true
+	if depth >= 1 {
+		return
+	}
+
+	links := htmlParser.Traverse(getResponseReader(url))
 	sameDomainLinks := filterSameDomain(getDomainName(url), links)
 	for _, sameDomainLink := range sameDomainLinks {
-		*allLinks = append(*allLinks, sameDomainLink.Href)
+		if _, ok := (*siteMap)[sameDomainLink.Href]; ok {
+			continue
+		}
+		MapSite(sameDomainLink.Href, siteMap, depth+1)
 	}
 }
